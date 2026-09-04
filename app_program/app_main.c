@@ -505,6 +505,17 @@ EXPORT INT usermain(void)
 {
 	ID	tid;
 
+	/* C1 race harness runs instead of the demo pipeline.  The harness
+	   brings its own tasks (two hammers + auditor, see race_harness.c);
+	   the demo producer/consumer would only add allocator noise. */
+#define RUN_RACE_HARNESS 1
+#if RUN_RACE_HARNESS
+	{
+		IMPORT INT usermain_raceharness(void);
+		return usermain_raceharness();
+	}
+#endif
+
 	mpfid = tk_cre_mpf(&cmpf); if(!made("mpf", mpfid)) return 1;
 	mtxid = tk_cre_mtx(&cmtx); if(!made("mtx", mtxid)) return 1;
 	mbfid = tk_cre_mbf(&cmbf); if(!made("mbf", mbfid)) return 1;
