@@ -5,14 +5,9 @@
 #include "usb_console_compat.h"
 #include "race_harness.h"
 
-LOCAL T_CMPF desc = {
-	.mpfatr		= TA_TFIFO | TA_RNG3,
-	.mpfcnt		= 1,
-	.blfsz		= 32768,
-};
-
+#define POOL_SIZE	32768
 #define BUTTON_PIN	20
-#define HEARTBEAT_OPS	1000
+#define HEARTBEAT_OPS	100
 
 LOCAL void churn_task(INT stacd, void *exinf)
 {
@@ -31,11 +26,11 @@ LOCAL void churn_task(INT stacd, void *exinf)
 	tm_printf((UB *)"[churn%d] race started\n", stacd);
 
 	for(;;) {
-		ID	id = tk_cre_mpf(&desc);
+		void	*p = Kmalloc(POOL_SIZE);
 
-		if ( id > E_OK ) {
+		if ( p != NULL ) {
 			ok++;
-			tk_del_mpf(id);
+			Kfree(p);
 		} else {
 			fail++;
 		}
