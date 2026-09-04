@@ -160,6 +160,7 @@ Noinit(EXPORT IMACB *knl_imacb);
 EXPORT void* knl_Imalloc( SZ size )
 {
 	QUEUE	*q, *aq, *aq2;
+	UINT	imask;
 
 	/* If it is smaller than the minimum fragment size,
 	   allocate the minimum size to it. */
@@ -171,8 +172,7 @@ EXPORT void* knl_Imalloc( SZ size )
 		size = ROUND(size);
 	}
 
-	BEGIN_CRITICAL_SECTION /* Kernel lock: cross-core exclusion (SMP),
-				  interrupt disable only (single core) */
+	DI(imask);  /* Exclusive control by interrupt disable */
 
 	/* Search FreeQue */
 	q = knl_searchFreeArea(knl_imacb, size);
@@ -200,7 +200,7 @@ EXPORT void* knl_Imalloc( SZ size )
 	setAreaFlag(aq, AREA_USE);
 
 err_ret:
-	END_CRITICAL_SECTION;
+	EI(imask);
 
 	return (void *)q;
 }
@@ -261,9 +261,9 @@ EXPORT void* knl_Irealloc( void *ptr, SZ size )
 EXPORT void  knl_Ifree( void *ptr )
 {
 	QUEUE	*aq;
+	UINT	imask;
 
-	BEGIN_CRITICAL_SECTION /* Kernel lock: cross-core exclusion (SMP),
-				  interrupt disable only (single core) */
+	DI(imask);  /* Exclusive control by interrupt disable */
 
 	aq = (QUEUE*)ptr - 1;
 	clrAreaFlag(aq, AREA_USE);
@@ -283,7 +283,7 @@ EXPORT void  knl_Ifree( void *ptr )
 
 	knl_appendFreeArea(knl_imacb, aq);
 
-	END_CRITICAL_SECTION;
+	EI(imask);
 }
 
 
